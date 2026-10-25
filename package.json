@@ -1,15 +1,22 @@
 {
-  "name": "producto-trust",
+  "name": "sistema-gestion-estadios",
   "version": "1.0.0",
-  "description": "",
+  "description": "API REST para la gestion de estadios de futbol con Node.js, Express y MongoDB",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "estadios",
+    "futbol",
+    "nodejs",
+    "express",
+    "mongodb",
+    "mongoose"
+  ],
+  "author": "Michel-Angel-Flores <202224035_flores@tesch.edu.mx>",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "connect-multiparty": "^2.2.0",

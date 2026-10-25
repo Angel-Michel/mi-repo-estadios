@@ -1,138 +1,130 @@
-# Producto Trust
+# Sistema de Gestion de Estadios de Futbol
 
-API REST para la gestión de **productos** y **almacenes**, con subida/consulta de imágenes y geolocalización. Construida con **Express 5**, **MongoDB Atlas/Local (Mongoose)** y **Node.js**.
+API REST para la gestion de **estadios de futbol**, con operaciones CRUD, subida y consulta de fotografias, y geolocalizacion inversa. Construida con **Node.js**, **Express 5** y **MongoDB (Mongoose)**.
+
+Autor: **Tu Nombre**
 
 ---
 
 ## Requisitos
 
-- Node.js 18+ (usa `fetch` nativo y `AbortSignal.timeout`)
+- Node.js 18 o superior
 - MongoDB Atlas o una instancia local de MongoDB
 
-## Instalación
+## Instalacion
 
 ```bash
 npm install
 ```
 
-Crea un archivo `.env` en la raíz del proyecto:
+Crea el archivo `.env` en la raiz del proyecto tomando como base `.env.example`:
 
 ```env
-PORT=9000
-DB_NAME=nombre_de_tu_base
-MONGODB_URI=mongodb+srv://usuario:clave@cluster/...
+PORT=8080
+DB_NAME=estadios
+MONGODB_URI=mongodb+srv://usuario:clave@cluster0.xxxxx.mongodb.net/estadios
 ```
 
-La conexión intenta primero **MongoDB Atlas** (`MONGODB_URI`); si no está disponible, cae automáticamente a la base **local** (`mongodb://localhost:27017/<DB_NAME>`).
+La conexion intenta primero **MongoDB Atlas** (`MONGODB_URI`). Si Atlas no responde, cae automaticamente a la base local `mongodb://localhost:27017/<DB_NAME>`.
 
-## Ejecución
+## Ejecucion
 
 ```bash
 npm start
 ```
 
-El servidor queda disponible en `http://localhost:<PORT>`.
+Servidor disponible en `http://localhost:<PORT>`.
 
 ## Estructura del proyecto
 
 ```
-├── app.js                      # Punto de entrada: middleware, rutas y arranque
+├── app.js                       # Punto de entrada: middlewares, rutas y arranque
 ├── config/
-│   └── db.js                   # Conexión a MongoDB (Atlas con fallback local)
+│   ├── db.js                    # Conexion a MongoDB (Atlas con fallback local)
+│   └── imagenes.js              # Ruta, extensiones y tamano maximo de imagenes
 ├── routers/
-│   └── rutas.js                # Definición de routers (productos, almacen, ubicacion)
+│   └── rutas.js                 # Routers de estadios y ubicacion
 ├── control/
-│   ├── productoControl.js      # Lógica CRUD + subida/consulta de imágenes
-│   ├── almacenControl.js       # Lógica CRUD de almacenes (borrado en cascada)
-│   └── ubicacionControl.js     # Controlador de geolocalización
+│   ├── estadioControl.js        # CRUD + imagenes de estadios
+│   └── ubicacionControl.js      # Geolocalizacion inversa
 ├── services/
-│   └── ubicacionService.js     # Cliente de Nominatim (OpenStreetMap)
+│   └── ubicacionService.js      # Cliente de Nominatim (OpenStreetMap)
 ├── modelo/
-│   ├── producto.js             # Esquema de Producto (Mongoose)
-│   └── almacen.js              # Esquema de Almacen con virtual "productos"
-└── imagenes/                   # Archivos estáticos de imágenes subidas
+│   └── estadio.js               # Esquema de Estadio (Mongoose)
+└── imagenes/                    # Fotografias subidas (express.static)
 ```
 
-## Modelos
+## Modelo Estadio
 
-### Producto
-
-| Campo | Tipo | Obligatorio |
-|-------|------|-------------|
-| nombre | String | sí |
-| categoria | String | sí |
-| ubicacion | String | sí |
-| precio | Number | sí |
-| almacen | ObjectId → Almacen | sí |
-| imagen | String (ruta relativa) | no |
-| fechaCreacion | Date | default: ahora |
-
-### Almacen
-
-| Campo | Tipo | Obligatorio |
-|-------|------|-------------|
-| nombre | String | sí |
-| ubicacion | String | sí |
-| fechaCreacion | Date | default: ahora |
-
-Incluye un **virtual** `productos` que permite hacer `populate('productos')` para listar los productos de cada almacén.
+| Campo | Tipo | Obligatorio | Descripcion |
+|-------|------|-------------|-------------|
+| nombre | String | si | Nombre del estadio |
+| capacidad | Number | si | Capacidad de espectadores (>= 0) |
+| ubicacion | String | si | Ciudad o direccion |
+| equipoLocal | String | si | Equipo que juega de local |
+| imagen | String | no | Ruta relativa de la fotografia |
+| fechaCreacion | Date | no | Se asigna automaticamente |
 
 ## Endpoints
 
-### Raíz
+Base de estadios: `/api/estadios`
 
-| Método | Ruta | Descripción |
+| Metodo | Ruta | Descripcion |
 |--------|------|-------------|
-| GET | `/` | Saludo / health check |
+| GET | `/` | Health check de la API |
+| POST | `/api/estadios/alta` | Crear estadio |
+| GET | `/api/estadios/obtenerVarios` | Listar estadios (filtros opcionales `?equipoLocal=` y `?ubicacion=`) |
+| GET | `/api/estadios/obtenerUno/:id` | Obtener un estadio |
+| PUT | `/api/estadios/actualizar/:id` | Actualizar estadio |
+| DELETE | `/api/estadios/baja/:id` | Eliminar estadio y su imagen |
+| DELETE | `/api/estadios/eliminar/:id` | Igual que `baja/:id` |
+| POST | `/api/estadios/subirImagen/:id` | Subir fotografia (multipart, campo `imagen`) |
+| GET | `/api/estadios/obtenerImagen/:id` | Consultar ruta y URL de la fotografia |
+| DELETE | `/api/estadios/eliminarImagen/:id` | Eliminar solo la fotografia |
 
-### Productos (`/productos`)
+### Ubicacion
 
-| Método | Ruta | Descripción |
+| Metodo | Ruta | Descripcion |
 |--------|------|-------------|
-| POST | `/productos/alta` | Crear producto |
-| DELETE | `/productos/baja/:id` | Eliminar producto |
-| DELETE | `/productos/eliminar/:id` | Eliminar producto |
-| PUT | `/productos/actualizar/:id` | Actualizar producto |
-| GET | `/productos/obtenerUno/:id` | Obtener un producto (con populate de almacén) |
-| GET | `/productos/obtenerVarios` | Listar productos (filtro opcional `?almacen=<id>`) |
-| POST | `/productos/subirImagen/:id` | Subir imagen (multipart, campo `imagen`) |
-| GET | `/productos/obtenerImagen/:id` | Obtener datos/URL de la imagen del producto |
+| GET | `/api/ubicacion/donde-estoy?lat=<lat>&lon=<lon>` | Devuelve la ciudad segun coordenadas |
 
-### Almacenes (`/almacen`)
+## Ejemplo de creacion
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/almacen/alta` | Crear almacén |
-| DELETE | `/almacen/baja/:id` | Eliminar almacén y sus productos (en cascada) |
-| DELETE | `/almacen/eliminar/:id` | Eliminar almacén y sus productos |
-| PUT | `/almacen/actualizar/:id` | Actualizar almacén |
-| GET | `/almacen/obtenerUno/:id` | Obtener un almacén (con populate de productos) |
-| GET | `/almacen/obtenerVarios` | Listar almacenes (con populate de productos) |
-
-### Ubicación (`/ubicacion`)
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/ubicacion/donde-estoy?lat=<lat>&lon=<lon>` | Devuelve la ciudad (Nominatim / OpenStreetMap) a partir de coordenadas |
-
-## Archivos estáticos
-
-Las imágenes subidas se sirven desde la raíz con el prefijo `/imagenes`:
-
-```
-http://localhost:9000/imagenes/<nombre_archivo>.png
+```bash
+curl -X POST http://localhost:8080/api/estadios/alta ^
+  -H "Content-Type: application/json" ^
+  -d "{\"nombre\":\"Estadio Azteca\",\"capacidad\":87000,\"ubicacion\":\"Ciudad de Mexico\",\"equipoLocal\":\"Club America\"}"
 ```
 
-## Lógica de imágenes
+## Ejemplo de subida de imagen
 
-- **Subida**: `connect-multiparty` deja el archivo temporal en `req.files.imagen`; el controlador lo copia a `imagenes/` con nombre único `` `${id}_${Date.now()}${extension}` `` y guarda la ruta relativa en `producto.imagen`.
-- **Consulta**: `GET /productos/obtenerImagen/:id` responde un JSON con la ruta y la URL completa. Los **bytes** los sirve `express.static` desde la ruta `/imagenes`.
-- **Path traversal**: al consultar la imagen se usa `path.basename()` para evitar que rutas manipuladas en la BD escapen de la carpeta `imagenes/`.
+```bash
+curl -X POST http://localhost:8080/api/estadios/subirImagen/<ID> ^
+  -F "imagen=@C:\ruta\azteca.jpg"
+```
+
+Formatos permitidos: `.jpg`, `.jpeg`, `.png`, `.webp`. Tamano maximo: 5 MB.
+
+La fotografia se guarda en `imagenes/` con el nombre `<id>_<timestamp><extension>` y se sirve en:
+
+```
+http://localhost:8080/imagenes/<nombre_archivo>.jpg
+```
+
+## Logica de imagenes
+
+- `connect-multiparty` deja el archivo temporal en `req.files.imagen`.
+- Se validan extension y tamano antes de guardar.
+- Se copia a `imagenes/` con un nombre unico y se guarda la ruta relativa en el estadio.
+- Al reemplazar una imagen, se elimina la anterior del disco.
+- Al eliminar un estadio, se elimina su imagen.
+- El archivo temporal siempre se borra al finalizar la peticion.
+- Se usa `path.basename()` al leer la ruta para evitar path traversal.
 
 ## API externa
 
-- **[Nominatim (OpenStreetMap)](https://nominatim.openstreetmap.org/)** para geocodificación inversa. Envía `User-Agent: ProductoTrust/1.0` y un timeout de 4 s.
+- [Nominatim (OpenStreetMap)](https://nominatim.openstreetmap.org/) para geocodificacion inversa, con `User-Agent: SistemaEstadios/1.0` y timeout de 4 segundos.
 
 ## Licencia
 
-ISC
+MIT

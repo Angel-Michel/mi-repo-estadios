@@ -3,7 +3,7 @@ const CONFIG = {
   formato: 'jsonv2',
   idioma: 'es',
   timeout: 4000,
-  userAgent: 'ProductoTrust/1.0'
+  userAgent: 'SistemaEstadios/1.0'
 };
 
 const obtenerCiudad = async (lat, lon) => {

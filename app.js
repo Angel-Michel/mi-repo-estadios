@@ -1,21 +1,23 @@
 const express = require('express');
 require('dotenv').config();
-const path = require('path');
 
 const conectarDB = require('./config/db');
-const { productos, almacen, ubicacion } = require('./routers/rutas');
+const { CARPETA_IMAGENES } = require('./config/imagenes');
+const { estadios, ubicacion } = require('./routers/rutas');
 
 const app = express();
 
-app.use(express.json()); //recibe datos en formato JSON
-app.use(express.urlencoded({ extended: true })); //recibir datos de formularios
-app.use('/imagenes', express.static(path.join(__dirname, 'imagenes')));
-app.use('/productos', productos);
-app.use('/almacen', almacen);
-app.use('/ubicacion', ubicacion);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/imagenes', express.static(CARPETA_IMAGENES));
+app.use('/api/estadios', estadios);
+app.use('/api/ubicacion', ubicacion);
 
 app.get('/', (req, res) => {
-  res.status(200).json({ mensaje: '200 OK: API funcionando en http://localhost:8080/productos y /almacen' });
+  res.status(200).json({
+    mensaje: '200 OK: API de Estadios funcionando',
+    endpoints: '/api/estadios y /api/ubicacion'
+  });
 });
 
 const PORT = process.env.PORT || 9000;

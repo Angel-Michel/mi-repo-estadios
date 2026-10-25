@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const conectarDB = async () => {
 
-  const atlasURI = process.env.MONGODB_URI;
+  const atlasURI = process.env.MONGO_URI;
   const localURI = `mongodb://localhost:27017/${process.env.DB_NAME}`;
 
   try {
@@ -19,10 +19,11 @@ const conectarDB = async () => {
     );
 
   } catch (errorAtlas) {
+    // AGREGA ESTA LÍNEA EXACTAMENTE ASÍ:
+    console.error('--- EL ERROR REAL DE ATLAS ES ---', errorAtlas); 
 
     console.log('Atlas no disponible.');
     console.log('Intentando conexión con MongoDB local...');
-
     try {
       // Intentar conexión local
       await mongoose.connect(localURI, {
